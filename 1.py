@@ -77,7 +77,8 @@ for i in sub:
 		big+=1
 	if arr[t]==0 and sub[t]==0:
 			zero+=1
-	if arr[t]<180 or sub[t]<180:	
+	else: 
+		if arr[t]<180 or sub[t]<180:	
 			if arr[t]>=180 and sub[t]<=180:
 				a+=1
 			if arr[t]<=180 and sub[t]>=180:
