@@ -56,6 +56,9 @@ model.fit(X_train, y_train)
 #print model.score (X_validation, y_validation)
 sub = model.predict(X_validation)
 
+fe = model.get_feature_importance(X_validation, 
+                       y=y_validation)
+print "Feature importance ", fe
 
 s = 0
 t = 0
