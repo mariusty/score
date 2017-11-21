@@ -1,9 +1,10 @@
+from __future__ import division
 from catboost import CatBoostRegressor
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing 
 
-dataset = pd.read_csv("test_task.csv", low_memory=False, usecols=['gender', 'children', 'age', 'maritalSt', 'region', 'city', 'education', 'pens', 'car', 'occupation', 'work_experience', 'loanPeriod', 'loanType', 'loanAmount', 'rate', 'loanNumberTotal', 'loanNumberOverdue', 'overdueTotal', 'overdueMax', 'prolongation', 'collector', 'overdueCurrent', 'monthlyBudget', 'student','indpred', 'realEstate', 'limitSimple', 'limitAnn', 'marketChannel', 'loanPurpose', 'amountAsked','overdue_30', 'target_prediction', 'location_type', 'mean_overdue_days', 'workpos_correct', 'main_income', 'total_income', 'compound_int', 'loans_last30', 'loans_last90', 'loans_last90', 'loans_last180', 'loans_last365', 'deviation_from_region_median', 'deviation_from_city_median', 'new_client', 'collector_ratio', 'prolong_ratio', 'amount_ratio', 'sum_income_ratio', 'overdue_ratio', 'good_loans']) 
+dataset = pd.read_csv("1.csv", low_memory=False)
 
 #replace null values, convert object data to categorical
 dataset.fillna(-9999, inplace=True)
@@ -69,47 +70,67 @@ b = 0
 fp = 0
 zero = 0
 ex=0
+k=0
+av=0
+fl=0
 for i in sub:
 	sub[t]=round(sub[t])
 	if sub[t]<0:	#minimum overdue can be 0
+		#print sub[t]
 		sub[t]=0
-	if arr[t]>=180 and sub[t]>=180:
-		big+=1
 	if arr[t]==0 and sub[t]==0:
-			zero+=1
-	else: 
-		if arr[t]<180 or sub[t]<180:	
-			if arr[t]>=180 and sub[t]<=180:
+		zero+=1
+		ex+1
+	if arr[t]==180 and sub[t]==180:
+		ex+=1
+	if arr[t]>180 and sub[t]>180:
+		big+=1
+	if (arr[t]<180 or sub[t]<180) and (arr[t]>0 or sub[t]>0):
+			k+=1
+			err= abs(arr[t]-sub[t]) #calculate the error	
+			if arr[t]>180 and sub[t]<180:
 				a+=1
-			if arr[t]<=180 and sub[t]>=180:
+				fl+=err
+				#print arr[t], " ", sub[t]
+			if arr[t]<180 and sub[t]>180:
 				b+=1
-				fp+=sub[t]-arr[t]
-			if arr[t]<180 and sub[t]<180:			
-				err= abs(arr[t]-sub[t]) #calculate the error 
+				fp+=err
+				#print arr[t], " ", sub[t]
+			if arr[t]<180 and sub[t]<180:
+				av+=1			 
+				#print arr[t], "  ", sub[t]
 				s+=err
-			if arr[t]>sub[t]:
-				less+=1
-			if arr[t]<sub[t]:
-				more+=1
-			if arr[t]==sub[t]:
-				ex+=1
-			if criticalerrorrate<err:
-				criticalerror+=1
-				if err>m:  #find the maximum error in predictions
-					m=err
-					#print arr[t], "   ", sub[t]	
+				if arr[t]>sub[t]:
+					less+=1
+				if arr[t]<sub[t]:
+					more+=1
+				if arr[t]==sub[t]:
+					ex+=1
+				if criticalerrorrate<err:
+					criticalerror+=1
+					if err>m:  #find the maximum error in predictions
+						m=err
+						#print arr[t], "   ", sub[t]	
 	t+=1
 print "Number of predictions = ", t
-print "Wrong predicted <180 = ", a
-print "Wrong predicted >180 = ", b, " av. error  ",fp/b
-print "Predicted & current overdue > 180 = ", big
-print "Predicted & current overdue is 0 = ", zero
-print "Predicted value is lower = ", less		
-print "Predicted value is higher = ", more
-print "Predicted value is equal to test info = ", ex
-print "Number of errors with difference > ", criticalerrorrate, " = ",criticalerror
-print "Max error = ", m
-print "Mean error in [0,180] = ", s/t, " days for a loan"
+print "-----------------------------------"
+print "Predicted & current overdue > 180 = ", big, "    ", 100*big/t,"%"
+print "Predicted & current overdue is 0 = ", zero, "    ", 100*zero/t,"%"
+print "Predicted & current overdue is in (0;180) = ", av, "    ", 100*av/t,"%"
+print "Right classification in classes = ", big+zero+av, "    ", 100*(big+zero+av)/t,"%"
+print "------------------------------------------------"
+print "Wrong predicted <180 = ", a, " av. error  ",fl/a,"     ", 100*a/t,"%"
+print "Wrong predicted >180 = ", b, " av. error  ",fp/b, "    ", 100*b/t,"%"
+print "Wrong classification ", a+b, "    ", 100*(a+b)/t,"%"
+print "------------------------------------------------"
+print "Predicted value is lower = ", less, "    ", 100*less/k,"%"		
+print "Predicted value is higher = ", more, "     ", 100*more/k,"%"
+print "Predicted value is equal to data = ", ex, "    ", 100*ex/t,"%"
+print "------------------------------------------------"
+print "Predictions with error > ", criticalerrorrate, " = ",criticalerror, "    ", 100*criticalerror/k,"%"
+print "Predictions with error < ", criticalerrorrate, " = ", k - criticalerror, "    ", 100*(k-criticalerror)/k,"%"
+print "Max error in [0; 180]= ", m
+print "Mean error in [0; 180]= ", s/k, " days for a loan"
 
 result = pd.DataFrame({
         "Actual": y_validation,
